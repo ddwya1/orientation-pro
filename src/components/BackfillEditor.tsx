@@ -35,8 +35,8 @@ export default function BackfillEditor({
 
   if (!selectedTask) {
     return (
-      <div className="bg-slate-900/80 backdrop-blur-sm rounded-xl border border-slate-800/50 p-6 sm:p-8 text-center h-[600px] lg:h-full flex items-center justify-center shadow-xl glow-indigo">
-        <p className="text-sm sm:text-base text-slate-400/70">请从左侧任务看板选择一个任务</p>
+      <div className="bg-slate-900/80 backdrop-blur-sm rounded-xl border border-slate-800/50 p-6 sm:p-8 text-center h-full flex items-center justify-center shadow-xl glow-indigo">
+        <p className="text-sm sm:text-base text-slate-400/70">请从任务看板选择一个任务</p>
       </div>
     );
   }
@@ -49,7 +49,7 @@ export default function BackfillEditor({
   };
 
   return (
-    <div className="bg-slate-900/80 backdrop-blur-sm rounded-xl border border-slate-800/50 p-3 sm:p-4 h-[600px] lg:h-full flex flex-col shadow-xl glow-indigo">
+    <div className="bg-slate-900/80 backdrop-blur-sm rounded-xl border border-slate-800/50 p-3 sm:p-4 h-full flex flex-col shadow-xl glow-indigo">
       <div className="mb-3 sm:mb-4">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-base sm:text-lg font-semibold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">

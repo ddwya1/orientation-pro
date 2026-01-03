@@ -7,8 +7,9 @@ services:
       dockerfile: Dockerfile
     container_name: orientation-pro
     ports:
-      - "80:80"
+      - "5904:5904"
     restart: unless-stopped
     environment:
       - NODE_ENV=production
+
 

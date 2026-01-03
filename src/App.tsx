@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Upload, Download, Copy, CheckCircle2, Circle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Upload, Download, Copy, CheckCircle2, Circle, ListTodo, Edit3, FileText } from 'lucide-react';
 import { parseCardFile } from './utils/cardParser';
 import { generateTaskGroups } from './utils/taskSegmenter';
 import { backfillTaskResult } from './utils/backfill';
@@ -20,6 +20,15 @@ function App() {
   const [originalFormat, setOriginalFormat] = useState<'png' | 'json' | null>(null);
   const [originalPNG, setOriginalPNG] = useState<ArrayBuffer | undefined>(undefined);
   const [originalFileName, setOriginalFileName] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'tasks' | 'editor' | 'preview'>('tasks');
+
+  // 当选中任务时，在移动端自动切换到编辑器标签
+  useEffect(() => {
+    if (selectedTask) {
+      setActiveTab('editor');
+    }
+  }, [selectedTask]);
+
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -53,7 +62,26 @@ function App() {
       setSelectedTask(null);
       setBackfillResult('');
     } catch (error) {
-      alert(`解析失败: ${error instanceof Error ? error.message : '未知错误'}`);
+      let errorMessage = '解析失败: ';
+      if (error instanceof Error) {
+        // 根据不同的错误类型提供更具体的提示
+        if (error.message.includes('Invalid PNG file signature')) {
+          errorMessage += '这不是一个有效的PNG文件，请检查文件格式';
+        } else if (error.message.includes('Character card chunk has invalid CRC')) {
+          errorMessage += '角色卡数据损坏 (CRC错误)，这可能是由于文件传输问题导致的';
+        } else if (error.message.includes('No character card data found')) {
+          errorMessage += '未找到角色卡数据，请确保上传的是有效的角色卡PNG文件';
+        } else if (error.message.includes('Invalid JSON')) {
+          errorMessage += `JSON数据无效: ${error.message}`;
+        } else if (error.message.includes('Invalid tEXt chunk') || error.message.includes('Invalid iTXt chunk')) {
+          errorMessage += `PNG文本块损坏: ${error.message}`;
+        } else {
+          errorMessage += error.message;
+        }
+      } else {
+        errorMessage += '未知错误';
+      }
+      alert(errorMessage);
     }
   };
 
@@ -116,6 +144,10 @@ function App() {
 
   const handleExport = () => {
     if (!card || !originalFormat) return;
+    
+    // 临时调试：检查导出时的card状态
+    // 移除调试代码以避免潜在的兼容性问题
+    
     downloadCardByFormat(card, originalFormat, originalPNG, originalFileName);
   };
 
@@ -182,31 +214,64 @@ function App() {
 
       {/* Main Content */}
       {card && taskGroups.length > 0 ? (
-        <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
-          {/* 左侧：任务看板 */}
-          <div className="lg:col-span-3 order-1 lg:order-1">
-            <TaskBoard
-              taskGroups={taskGroups}
-              selectedTask={selectedTask}
-              onSelectTask={setSelectedTask}
-              onCopyTask={handleCopyTask}
-              orientationTarget={orientationTarget}
-            />
+        <div className="container mx-auto h-[calc(100vh-130px)] sm:h-[calc(100vh-140px)] flex flex-col lg:block lg:h-auto lg:px-4 lg:py-6">
+          {/* Mobile Tabs */}
+          <div className="lg:hidden flex border-b border-slate-800/50 bg-slate-900/95 backdrop-blur-md">
+            <button
+              onClick={() => setActiveTab('tasks')}
+              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors flex items-center justify-center gap-2 ${
+                activeTab === 'tasks' ? 'border-indigo-500 text-indigo-400 bg-slate-800/20' : 'border-transparent text-slate-400'
+              }`}
+            >
+              <ListTodo size={18} />
+              任务
+            </button>
+            <button
+              onClick={() => setActiveTab('editor')}
+              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors flex items-center justify-center gap-2 ${
+                activeTab === 'editor' ? 'border-indigo-500 text-indigo-400 bg-slate-800/20' : 'border-transparent text-slate-400'
+              }`}
+            >
+              <Edit3 size={18} />
+              编辑
+            </button>
+            <button
+              onClick={() => setActiveTab('preview')}
+              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors flex items-center justify-center gap-2 ${
+                activeTab === 'preview' ? 'border-indigo-500 text-indigo-400 bg-slate-800/20' : 'border-transparent text-slate-400'
+              }`}
+            >
+              <FileText size={18} />
+              预览
+            </button>
           </div>
 
-          {/* 中间：回填编辑区 */}
-          <div className="lg:col-span-5 order-2 lg:order-2">
-            <BackfillEditor
-              selectedTask={selectedTask}
-              backfillResult={backfillResult}
-              onResultChange={setBackfillResult}
-              onComplete={handleTaskComplete}
-            />
-          </div>
+          <div className="flex-1 overflow-hidden lg:overflow-visible lg:grid lg:grid-cols-12 lg:gap-6 p-2 sm:p-4 lg:p-0">
+            {/* 左侧：任务看板 */}
+            <div className={`h-full lg:h-auto lg:col-span-3 lg:block ${activeTab === 'tasks' ? 'block' : 'hidden'}`}>
+              <TaskBoard
+                taskGroups={taskGroups}
+                selectedTask={selectedTask}
+                onSelectTask={setSelectedTask}
+                onCopyTask={handleCopyTask}
+                orientationTarget={orientationTarget}
+              />
+            </div>
 
-          {/* 右侧：原卡数据预览 */}
-          <div className="lg:col-span-4 order-3 lg:order-3">
-            <CardPreview card={card} />
+            {/* 中间：回填编辑区 */}
+            <div className={`h-full lg:h-auto lg:col-span-5 lg:block ${activeTab === 'editor' ? 'block' : 'hidden'}`}>
+              <BackfillEditor
+                selectedTask={selectedTask}
+                backfillResult={backfillResult}
+                onResultChange={setBackfillResult}
+                onComplete={handleTaskComplete}
+              />
+            </div>
+
+            {/* 右侧：原卡数据预览 */}
+            <div className={`h-full lg:h-auto lg:col-span-4 lg:block ${activeTab === 'preview' ? 'block' : 'hidden'}`}>
+              <CardPreview card={card} />
+            </div>
           </div>
         </div>
       ) : (

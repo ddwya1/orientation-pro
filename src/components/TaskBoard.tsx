@@ -25,7 +25,7 @@ export default function TaskBoard({
   const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
   return (
-    <div className="bg-slate-900/80 backdrop-blur-sm rounded-xl border border-slate-800/50 p-3 sm:p-4 h-[400px] lg:h-full overflow-y-auto shadow-xl glow-indigo">
+    <div className="bg-slate-900/80 backdrop-blur-sm rounded-xl border border-slate-800/50 p-3 sm:p-4 h-full overflow-y-auto shadow-xl glow-indigo">
       <div className="mb-4">
         <h2 className="text-base sm:text-lg font-semibold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent mb-3">
           任务看板

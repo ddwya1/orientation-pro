@@ -130,16 +130,16 @@ export function parseJSONCard(jsonString: string, isRetry: boolean = false): Sil
           // 递归调用解析解码后的内容（标记为重试，防止再次解码）
           return parseJSONCard(decoded, true);
         } catch (decodeError) {
-          // base64 解码也失败，抛出原始错误
-          throw new Error(`Invalid JSON: ${error.message}`);
+          // base64 解码也失败，抛出包含更多信息的错误
+          throw new Error(`Invalid JSON (base64 encoded): ${error.message}`);
         }
       } else {
-        throw new Error(`Invalid JSON: ${error.message}`);
+        throw new Error(`Invalid JSON syntax: ${error.message}`);
       }
     } else {
-      throw new Error(`Invalid JSON: ${error instanceof SyntaxError ? error.message : 'Unknown error'}`);
+      // 非语法错误，可能是格式验证失败
+      throw error instanceof Error ? error : new Error('Unknown error parsing character card');
     }
-    throw error;
   }
 }
 

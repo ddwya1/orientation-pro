@@ -58,3 +58,4 @@ export async function copyTaskToClipboard(
   await navigator.clipboard.writeText(fullPrompt);
 }
 
+

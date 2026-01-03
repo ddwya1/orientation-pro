@@ -116,7 +116,7 @@ export default function CardPreview({ card }: CardPreviewProps) {
   const data = card.data;
 
   return (
-    <div className="bg-slate-900/80 backdrop-blur-sm rounded-xl border border-slate-800/50 p-3 sm:p-4 h-[500px] lg:h-full flex flex-col shadow-xl glow-indigo">
+    <div className="bg-slate-900/80 backdrop-blur-sm rounded-xl border border-slate-800/50 p-3 sm:p-4 h-full flex flex-col shadow-xl glow-indigo">
       <h2 className="text-base sm:text-lg font-semibold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent mb-3 sm:mb-4">
         原卡数据预览
       </h2>

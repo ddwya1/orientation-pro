@@ -19,7 +19,15 @@ function extractMarkedContent(result: string): Map<string, string> {
   const matches = Array.from(result.matchAll(TITLE_REGEX));
   
   if (matches.length === 0) {
-    // 如果没有找到标题标记，返回整个内容作为后备
+    // 如果没有找到标题标记，尝试将整个内容作为"原始内容"或"世界书"
+    if (result.trim()) {
+      // 检查是否包含"世界书条目"字样
+      if (result.includes('世界书条目')) {
+        contentMap.set('世界书', result.trim());
+      } else {
+        contentMap.set('原始内容', result.trim());
+      }
+    }
     return contentMap;
   }
   
@@ -31,7 +39,13 @@ function extractMarkedContent(result: string): Map<string, string> {
     const endIndex = i < matches.length - 1 ? matches[i + 1].index! : result.length;
     
     // 提取标题后的内容（去除前导空白）
-    let content = result.slice(startIndex, endIndex).trim();
+    let content = result.slice(startIndex, endIndex);
+    
+    // 移除前导空白行
+    content = content.replace(/^\s*\n+/, '');
+    
+    // 移除尾随空白行
+    content = content.replace(/\n+\s*$/, '');
     
     // 移除可能的后续标题标记（如果 AI 重复输出了标题）
     content = content.replace(/^###\s*【[^】]+】\s*/m, '');
@@ -95,43 +109,91 @@ function handleAlternateGreetings(contentMap: Map<string, string>): string[] {
 
 /**
  * 处理世界书条目
+ * 返回带索引的条目数组，索引是1-based的（用于匹配任务中的标题）
  */
-function handleWorldBookEntries(contentMap: Map<string, string>): Array<{ keys: string[]; content: string }> {
-  const entries: Array<{ keys: string[]; content: string }> = [];
+function handleWorldBookEntries(contentMap: Map<string, string>, taskRange?: { start: number; end: number }): Array<{ index: number; keys: string[]; content: string }> {
+  const entries: Array<{ index: number; keys: string[]; content: string }> = [];
   
-  // 查找所有世界书条目
-  const worldBookEntries: Array<{ index: number; keys: string[]; content: string }> = [];
-  
+  // 先尝试从标题标记中提取
   for (const [title, content] of contentMap.entries()) {
     const entryMatch = title.match(/世界书条目(\d+)/);
     if (entryMatch) {
-      const index = parseInt(entryMatch[1], 10);
+      const index = parseInt(entryMatch[1], 10); // 1-based 索引
       
       // 提取关键词（可能在内容开头）
       let keys: string[] = [];
       let actualContent = content;
       
+      // 先提取关键词行（可能在开头）
       const keyMatch = content.match(/\*\*关键词\*\*:\s*(.+?)(?:\n|$)/);
       if (keyMatch) {
         const keyText = keyMatch[1].trim();
         keys = keyText.split(',').map(k => k.trim()).filter(k => k);
-        actualContent = content.replace(/\*\*关键词\*\*:.+?(?:\n|$)/, '').trim();
+        // 移除关键词行（包括前后的空白），但保留后续内容
+        actualContent = content.replace(/\*\*关键词\*\*:\s*.+?(?:\n|$)/, '').trim();
       }
       
-      worldBookEntries.push({ index, keys, content: actualContent });
+      // 保留二级标题（如 ### 巫回雁的过往），因为这是内容的一部分
+      // 只移除重复的世界书条目标题标记（如果存在）
+      actualContent = actualContent.replace(/^###\s*【世界书条目\d+】\s*/m, '').trim();
+      
+      // 确保内容不为空
+      if (!actualContent) {
+        actualContent = content.trim();
+      }
+      
+      entries.push({ index, keys, content: actualContent });
+    }
+  }
+  
+  // 如果没有找到带标题标记的条目，但有任务范围，尝试直接使用内容
+  if (entries.length === 0 && taskRange) {
+    // 尝试从"世界书"、"世界观/知识库"或"原始内容"中提取
+    const worldBookContent = contentMap.get('世界书') || 
+                            contentMap.get('世界观/知识库') || 
+                            contentMap.get('原始内容');
+    if (worldBookContent) {
+      // 如果只有一个条目在范围内，直接使用整个内容
+      if (taskRange.start === taskRange.end) {
+        const index = taskRange.start;
+        let keys: string[] = [];
+        let actualContent = worldBookContent.trim();
+        
+        const keyMatch = actualContent.match(/\*\*关键词\*\*:\s*(.+?)(?:\n|$)/);
+        if (keyMatch) {
+          const keyText = keyMatch[1].trim();
+          keys = keyText.split(',').map(k => k.trim()).filter(k => k);
+          actualContent = actualContent.replace(/\*\*关键词\*\*:.+?(?:\n|$)/, '').trim();
+        }
+        
+        entries.push({ index, keys, content: actualContent });
+      } else {
+        // 多个条目，尝试按条目分割（可能是多个条目用双换行符分隔）
+        const parts = worldBookContent.split(/\n\n+/);
+        parts.forEach((part, idx) => {
+          if (part.trim()) {
+            const index = taskRange.start + idx;
+            if (index <= taskRange.end) {
+              let keys: string[] = [];
+              let actualContent = part.trim();
+              
+              const keyMatch = actualContent.match(/\*\*关键词\*\*:\s*(.+?)(?:\n|$)/);
+              if (keyMatch) {
+                const keyText = keyMatch[1].trim();
+                keys = keyText.split(',').map(k => k.trim()).filter(k => k);
+                actualContent = actualContent.replace(/\*\*关键词\*\*:.+?(?:\n|$)/, '').trim();
+              }
+              
+              entries.push({ index, keys, content: actualContent });
+            }
+          }
+        });
+      }
     }
   }
   
   // 按索引排序
-  worldBookEntries.sort((a, b) => a.index - b.index);
-  
-  // 转换为所需格式
-  for (const entry of worldBookEntries) {
-    entries.push({
-      keys: entry.keys,
-      content: entry.content,
-    });
-  }
+  entries.sort((a, b) => a.index - b.index);
   
   return entries;
 }
@@ -157,25 +219,136 @@ export function backfillTaskResult(
     if (field === 'alternate_greetings') {
       const greetings = handleAlternateGreetings(contentMap);
       if (greetings.length > 0) {
-        // 对于分段任务，每个任务的结果包含该批次的所有条目
-        // 由于每个任务都是独立处理的，直接替换即可
-        // （在实际使用中，应该按任务顺序依次回填，每个任务覆盖对应范围）
-        updatedCard.data.alternate_greetings = greetings;
+        // 如果有 range 信息，只更新对应范围的条目
+        if (task.range && task.range.type === 'alternate_greetings') {
+          const { start, end } = task.range;
+          // start 和 end 是 1-based 的索引，需要转换为 0-based
+          const startIdx = start - 1;
+          const endIdx = end - 1;
+          
+          // 获取原始数组
+          const originalGreetings = updatedCard.data.alternate_greetings || [];
+          const newGreetings = [...originalGreetings];
+          
+          // 更新对应范围的条目
+          greetings.forEach((greeting, idx) => {
+            const targetIdx = startIdx + idx;
+            if (targetIdx < originalGreetings.length) {
+              newGreetings[targetIdx] = greeting;
+            } else {
+              // 如果索引超出范围，添加新条目
+              newGreetings.push(greeting);
+            }
+          });
+          
+          updatedCard.data.alternate_greetings = newGreetings;
+        } else {
+          // 没有 range 信息，说明是整段任务，直接替换所有条目
+          updatedCard.data.alternate_greetings = greetings;
+        }
       }
     } else if (field === 'character_book') {
-      const entries = handleWorldBookEntries(contentMap);
+      const entries = handleWorldBookEntries(contentMap, task.range);
+      
+      // 如果 entries 为空，但 contentMap 中有内容，尝试直接使用原始内容
+      if (entries.length === 0 && contentMap.size > 0 && task.range && task.range.type === 'world_book') {
+        // 尝试从任何可用的内容中提取
+        for (const [title, content] of contentMap.entries()) {
+          if (content.trim()) {
+            // 如果只有一个条目在范围内，直接使用这个内容
+            if (task.range.start === task.range.end) {
+              const index = task.range.start;
+              let keys: string[] = [];
+              let actualContent = content.trim();
+              
+              // 尝试提取关键词
+              const keyMatch = actualContent.match(/\*\*关键词\*\*:\s*(.+?)(?:\n|$)/);
+              if (keyMatch) {
+                const keyText = keyMatch[1].trim();
+                keys = keyText.split(',').map(k => k.trim()).filter(k => k);
+                actualContent = actualContent.replace(/\*\*关键词\*\*:.+?(?:\n|$)/, '').trim();
+              }
+              
+              entries.push({ index, keys, content: actualContent });
+              break; // 只处理第一个有效内容
+            }
+          }
+        }
+      }
+      
       if (entries.length > 0) {
         if (!updatedCard.data.character_book) {
           updatedCard.data.character_book = { entries: [] };
         }
-        // 对于分段任务，每个任务的结果包含该批次的所有条目
-        // 直接替换对应范围的条目
-        updatedCard.data.character_book.entries = entries.map((entry, idx) => ({
-          keys: entry.keys,
-          content: entry.content,
-          enabled: true,
-          insertion_order: idx,
-        }));
+        
+        // 获取原始条目数组
+        const originalEntries = updatedCard.data.character_book.entries || [];
+        
+        // 如果有 range 信息，只更新对应范围的条目
+        if (task.range && task.range.type === 'world_book') {
+          const { start, end } = task.range;
+          // start 和 end 是 1-based 的索引（任务范围）
+          
+          // 创建新数组，保留原始条目的其他属性
+          const newEntries = [...originalEntries];
+          
+          // 更新对应范围的条目
+          // entries 中的 index 是 1-based 的（从标题中解析出来的）
+          entries.forEach((entry) => {
+            // entry.index 是 1-based，转换为 0-based 数组索引
+            const targetIdx = entry.index - 1;
+            
+            // 确保索引在任务范围内
+            if (entry.index >= start && entry.index <= end) {
+              if (targetIdx >= 0 && targetIdx < originalEntries.length) {
+                // 保留原始条目的所有属性（如 comment, enabled, insertion_order, id, extensions 等）
+                // 只更新 keys 和 content
+                newEntries[targetIdx] = {
+                  ...originalEntries[targetIdx],
+                  keys: entry.keys,
+                  content: entry.content, // 确保使用新的内容，覆盖旧的内容
+                };
+              } else if (targetIdx === originalEntries.length) {
+                // 如果索引正好是数组长度，添加新条目
+                newEntries.push({
+                  ...originalEntries[targetIdx] || {},
+                  keys: entry.keys,
+                  content: entry.content,
+                  enabled: originalEntries[targetIdx]?.enabled ?? true,
+                  insertion_order: originalEntries[targetIdx]?.insertion_order ?? newEntries.length,
+                });
+              }
+            }
+          });
+          
+          updatedCard.data.character_book.entries = newEntries;
+        } else {
+          // 没有 range 信息，说明是整段任务
+          // 需要根据 entries 中的 index 来更新对应位置的条目
+          const newEntries = [...originalEntries];
+          
+          entries.forEach((entry) => {
+            const targetIdx = entry.index - 1; // 转换为 0-based
+            if (targetIdx >= 0 && targetIdx < originalEntries.length) {
+              // 保留原始条目的其他属性
+              newEntries[targetIdx] = {
+                ...originalEntries[targetIdx],
+                keys: entry.keys,
+                content: entry.content,
+              };
+            } else if (targetIdx === originalEntries.length) {
+              // 添加新条目
+              newEntries.push({
+                keys: entry.keys,
+                content: entry.content,
+                enabled: true,
+                insertion_order: newEntries.length,
+              });
+            }
+          });
+          
+          updatedCard.data.character_book.entries = newEntries;
+        }
       }
     } else {
       // 直接字段回填
