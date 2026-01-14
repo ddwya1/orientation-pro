@@ -152,153 +152,182 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen text-white">
-      {/* Header */}
-      <header className="border-b border-slate-800/50 bg-slate-900/40 backdrop-blur-md sticky top-0 z-10 shadow-lg shadow-black/20">
-        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
-            <div className="flex-1 min-w-0">
-              <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">
-                Orientation Pro
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-400/80">角色卡性向转换智能工作站</p>
+    <div className="min-h-screen text-text relative overflow-hidden bg-background">
+      {/* 科技感背景 */}
+      <div className="absolute inset-0 bg-grid opacity-20"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/50 to-background"></div>
+      
+      {/* 动态发光球 */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[120px] animate-pulse-slow"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/10 rounded-full blur-[120px] animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
+      
+      <div className="relative z-10 flex flex-col h-screen">
+        <header className="border-b border-white/5 bg-surface/40 backdrop-blur-xl">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shadow-lg shadow-primary/20">
+                  <ListTodo className="text-white" size={24} />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-black tracking-tighter text-glow flex items-center gap-2">
+                    <span className="text-primary">ORIENTATION</span>
+                    <span className="text-white/90">PRO</span>
+                  </h1>
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-primary/60 font-bold">角色卡性向转换智能工作站</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <div className="flex items-center bg-black/40 border border-white/10 rounded-full p-1 backdrop-blur-md">
+                  <button
+                    onClick={() => setOrientationTarget('BL')}
+                    className={`px-6 py-1.5 rounded-full transition-all text-sm font-bold flex items-center gap-2 ${
+                      orientationTarget === 'BL'
+                        ? 'bg-primary text-black shadow-lg shadow-primary/40'
+                        : 'text-textLight hover:text-white'
+                    }`}
+                  >
+                    <span className={orientationTarget === 'BL' ? 'animate-pulse' : ''}>●</span> BL
+                  </button>
+                  <button
+                    onClick={() => setOrientationTarget('BG')}
+                    className={`px-6 py-1.5 rounded-full transition-all text-sm font-bold flex items-center gap-2 ${
+                      orientationTarget === 'BG'
+                        ? 'bg-pink-500 text-white shadow-lg shadow-pink-500/40'
+                        : 'text-textLight hover:text-white'
+                    }`}
+                  >
+                    <span className={orientationTarget === 'BG' ? 'animate-pulse' : ''}>●</span> BG
+                  </button>
+                </div>
+
+                <div className="h-8 w-[1px] bg-white/10 mx-2 hidden sm:block"></div>
+
+                {card ? (
+                  <button
+                    onClick={handleExport}
+                    className="group relative flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-5 py-2 rounded-xl transition-all text-sm font-bold overflow-hidden"
+                  >
+                    <div className="absolute inset-0 bg-primary/10 translate-y-full group-hover:translate-y-0 transition-transform"></div>
+                    <Download size={18} className="text-primary" />
+                    <span className="relative z-10 text-white">导出卡片</span>
+                  </button>
+                ) : (
+                  <label className="group relative flex items-center gap-2 bg-primary/10 hover:bg-primary/20 border border-primary/30 px-5 py-2 rounded-xl transition-all cursor-pointer text-sm font-bold overflow-hidden">
+                    <Upload size={18} className="text-primary animate-bounce" />
+                    <span className="text-primary">上传角色卡</span>
+                    <input type="file" className="hidden" onChange={handleFileUpload} accept=".png,.json" />
+                  </label>
+                )}
+              </div>
             </div>
             
-            <div className="flex items-center gap-2 sm:gap-4 w-full sm:w-auto">
-              {/* 性向切换 */}
-              <div className="flex items-center gap-1 sm:gap-2 bg-slate-800/60 backdrop-blur-sm border border-slate-700/50 rounded-xl p-1 flex-1 sm:flex-initial shadow-inner">
-                <button
-                  onClick={() => setOrientationTarget('BL')}
-                  className={`px-3 sm:px-4 py-2 rounded-lg transition-all text-sm sm:text-base flex-1 sm:flex-initial font-medium ${
-                    orientationTarget === 'BL'
-                      ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-md shadow-indigo-500/30'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
-                  }`}
-                >
-                  🟢 BL
-                </button>
-                <button
-                  onClick={() => setOrientationTarget('BG')}
-                  className={`px-3 sm:px-4 py-2 rounded-lg transition-all text-sm sm:text-base flex-1 sm:flex-initial font-medium ${
-                    orientationTarget === 'BG'
-                      ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md shadow-pink-500/30'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/50'
-                  }`}
-                >
-                  🔴 BG
-                </button>
+            {card && (
+              <div className="mt-4 flex items-center gap-6 text-[10px] uppercase tracking-widest font-bold text-textLight">
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                  <span>目标角色: <span className="text-white">{card.data.name || '未知'}</span></span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></span>
+                  <span>总字数: <span className="text-white">{wordCount.toLocaleString()}</span></span>
+                </div>
+                <div className="flex items-center gap-2 ml-auto">
+                  <span className="px-2 py-0.5 rounded bg-primary/10 border border-primary/20 text-primary">系统在线</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </header>
+
+        <main className="flex-1 overflow-hidden">
+          {!card ? (
+            <div className="h-full flex flex-center items-center justify-center p-4">
+              <div className="max-w-md w-full text-center space-y-8 animate-slide-up">
+                <div className="relative inline-block">
+                  <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full"></div>
+                  <div className="relative w-32 h-32 mx-auto border-2 border-primary/30 rounded-3xl flex items-center justify-center bg-surface/50 backdrop-blur-xl rotate-12 group hover:rotate-0 transition-transform duration-500">
+                    <Upload size={48} className="text-primary" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-3xl font-black text-white tracking-tight">准备好转换了吗？</h2>
+                  <p className="text-textLight text-sm leading-relaxed">
+                    上传您的 SillyTavern 角色卡 (PNG/JSON) 以启动性向转换流程。
+                  </p>
+                </div>
+                <label className="block w-full py-4 bg-primary text-black font-black rounded-2xl cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-primary/20 uppercase tracking-widest">
+                  初始化上传
+                  <input type="file" className="hidden" onChange={handleFileUpload} accept=".png,.json" />
+                </label>
+              </div>
+            </div>
+          ) : (
+            <div className="h-full container mx-auto flex flex-col lg:flex-row overflow-hidden lg:p-6 lg:gap-6">
+              {/* 移动端标签切换 */}
+              <div className="lg:hidden flex border-b border-white/5 bg-surface/40 backdrop-blur-xl">
+                {[
+                  { id: 'tasks', label: '任务列表', icon: ListTodo },
+                  { id: 'editor', label: '终端编辑', icon: Edit3 },
+                  { id: 'preview', label: '卡片预览', icon: FileText }
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={`flex-1 py-4 text-[10px] font-black tracking-[0.2em] transition-all flex items-center justify-center gap-2 ${
+                      activeTab === tab.id ? 'text-primary bg-primary/5 border-b-2 border-primary' : 'text-textLight'
+                    }`}
+                  >
+                    <tab.icon size={16} />
+                    {tab.label}
+                  </button>
+                ))}
               </div>
 
-              {/* 导出 */}
-              {card && (
-                <button
-                  onClick={handleExport}
-                  className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 px-3 sm:px-4 py-2 rounded-lg transition-all text-sm sm:text-base font-medium shadow-md shadow-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/30"
-                >
-                  <Download size={18} className="sm:w-5 sm:h-5" />
-                  <span className="hidden sm:inline">导出</span>
-                </button>
-              )}
-            </div>
-          </div>
-          
-          {card && (
-            <div className="mt-2 text-xs sm:text-sm text-slate-400/80 flex flex-col sm:flex-row gap-1 sm:gap-0">
-              <span>当前卡片: <span className="text-indigo-400 font-medium">{card.data.name || '未命名'}</span></span>
-              <span className="hidden sm:inline text-slate-600"> | </span>
-              <span>字数: <span className="text-indigo-400 font-medium">{wordCount.toLocaleString()}</span></span>
+              {/* 任务面板 */}
+              <div className={`flex-1 lg:flex-none lg:w-80 h-full lg:h-auto overflow-hidden ${activeTab === 'tasks' ? 'block' : 'hidden lg:block'}`}>
+                <div className="h-full glass-panel rounded-2xl overflow-hidden border border-white/5 flex flex-col">
+                  <TaskBoard
+                    taskGroups={taskGroups}
+                    selectedTask={selectedTask}
+                    onSelectTask={setSelectedTask}
+                    onCopyTask={handleCopyTask}
+                    orientationTarget={orientationTarget}
+                  />
+                </div>
+              </div>
+
+              {/* 编辑区域 */}
+              <div className={`flex-[2] h-full lg:h-auto overflow-hidden ${activeTab === 'editor' ? 'block' : 'hidden lg:block'}`}>
+                <div className="h-full glass-panel rounded-2xl overflow-hidden border border-white/5 flex flex-col relative">
+                  <div className="scanline"></div>
+                  {selectedTask ? (
+                    <BackfillEditor
+                      task={selectedTask}
+                      onComplete={(result) => handleTaskComplete(selectedTask.id, result)}
+                    />
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-textLight space-y-4">
+                      <div className="w-16 h-16 rounded-full border border-white/10 flex items-center justify-center animate-pulse">
+                        <Edit3 size={24} />
+                      </div>
+                      <p className="text-xs font-bold uppercase tracking-widest">Select a task to initialize terminal</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 预览区域 */}
+              <div className={`flex-1 lg:flex-none lg:w-96 h-full lg:h-auto overflow-hidden ${activeTab === 'preview' ? 'block' : 'hidden lg:block'}`}>
+                <div className="h-full glass-panel rounded-2xl overflow-hidden border border-white/5 flex flex-col">
+                  <CardPreview card={card} />
+                </div>
+              </div>
             </div>
           )}
-        </div>
-      </header>
-
-      {/* Main Content */}
-      {card && taskGroups.length > 0 ? (
-        <div className="container mx-auto h-[calc(100vh-130px)] sm:h-[calc(100vh-140px)] flex flex-col lg:block lg:h-auto lg:px-4 lg:py-6">
-          {/* Mobile Tabs */}
-          <div className="lg:hidden flex border-b border-slate-800/50 bg-slate-900/95 backdrop-blur-md">
-            <button
-              onClick={() => setActiveTab('tasks')}
-              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors flex items-center justify-center gap-2 ${
-                activeTab === 'tasks' ? 'border-indigo-500 text-indigo-400 bg-slate-800/20' : 'border-transparent text-slate-400'
-              }`}
-            >
-              <ListTodo size={18} />
-              任务
-            </button>
-            <button
-              onClick={() => setActiveTab('editor')}
-              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors flex items-center justify-center gap-2 ${
-                activeTab === 'editor' ? 'border-indigo-500 text-indigo-400 bg-slate-800/20' : 'border-transparent text-slate-400'
-              }`}
-            >
-              <Edit3 size={18} />
-              编辑
-            </button>
-            <button
-              onClick={() => setActiveTab('preview')}
-              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors flex items-center justify-center gap-2 ${
-                activeTab === 'preview' ? 'border-indigo-500 text-indigo-400 bg-slate-800/20' : 'border-transparent text-slate-400'
-              }`}
-            >
-              <FileText size={18} />
-              预览
-            </button>
-          </div>
-
-          <div className="flex-1 overflow-hidden lg:overflow-visible lg:grid lg:grid-cols-12 lg:gap-6 p-2 sm:p-4 lg:p-0">
-            {/* 左侧：任务看板 */}
-            <div className={`h-full lg:h-auto lg:col-span-3 lg:block ${activeTab === 'tasks' ? 'block' : 'hidden'}`}>
-              <TaskBoard
-                taskGroups={taskGroups}
-                selectedTask={selectedTask}
-                onSelectTask={setSelectedTask}
-                onCopyTask={handleCopyTask}
-                orientationTarget={orientationTarget}
-              />
-            </div>
-
-            {/* 中间：回填编辑区 */}
-            <div className={`h-full lg:h-auto lg:col-span-5 lg:block ${activeTab === 'editor' ? 'block' : 'hidden'}`}>
-              <BackfillEditor
-                selectedTask={selectedTask}
-                backfillResult={backfillResult}
-                onResultChange={setBackfillResult}
-                onComplete={handleTaskComplete}
-              />
-            </div>
-
-            {/* 右侧：原卡数据预览 */}
-            <div className={`h-full lg:h-auto lg:col-span-4 lg:block ${activeTab === 'preview' ? 'block' : 'hidden'}`}>
-              <CardPreview card={card} />
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="container mx-auto px-4 py-12 sm:py-20 text-center">
-          <div className="max-w-md mx-auto">
-            <div className="mx-auto mb-4 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 backdrop-blur-sm border border-indigo-500/30 flex items-center justify-center shadow-lg shadow-indigo-500/10">
-              <Upload size={32} className="text-indigo-400 sm:w-10 sm:h-10" />
-            </div>
-            <h2 className="text-lg sm:text-xl font-semibold mb-2 text-slate-200">上传角色卡开始转换</h2>
-            <p className="text-sm sm:text-base text-slate-400/80 mb-6 px-4">
-              支持 PNG（tEXt/iTXt 块）和 JSON 格式的角色卡文件
-            </p>
-            <label className="cursor-pointer inline-block">
-              <input
-                type="file"
-                accept=".json,.png"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 px-6 py-3 rounded-xl transition-all inline-flex items-center gap-2 text-sm sm:text-base font-medium shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/35">
-                <Upload size={20} />
-                <span>选择文件</span>
-              </div>
-            </label>
-          </div>
-        </div>
-      )}
+        </main>
+      </div>
     </div>
   );
 }
